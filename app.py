@@ -1,6 +1,8 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS  # 👈 add this
 
 app = Flask(__name__)
+CORS(app)  # 👈 add this line (enables requests from your website)
 
 # ✅ Home route for browser testing
 @app.route('/')
