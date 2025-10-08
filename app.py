@@ -4,45 +4,27 @@ from flask_cors import CORS  # 👈 add this
 app = Flask(__name__)
 CORS(app)  # 👈 add this line (enables requests from your website)
 
-# ✅ Home route for browser testing
-@app.route('/')
-def home():
-    return "✅ Mortgage Chatbot API is running. Use POST /chat to send messages."
+# Load Q&A from JSON file
+def load_responses():
+    json_path = os.path.join(os.path.dirname(__file__), 'responses.json')
+    if os.path.exists(json_path):
+        with open(json_path, 'r') as f:
+            return json.load(f)
+    return {}
 
+responses = load_responses()
 
-# ✅ Chat route for the chatbot widget
 @app.route('/chat', methods=['POST'])
 def chat():
-    user_message = request.json.get("message", "")
-    reply = ask_ollama(user_message)
-    return jsonify({"reply": reply})
+    data = request.get_json()
+    user_msg = data.get('message', '').strip().lower()
 
+    # Find best match
+    for key, reply in responses.items():
+        if key in user_msg:
+            return jsonify({"reply": reply})
+    
+    return jsonify({"reply": "Sorry, I don't have an answer for that yet."})
 
-# ✅ Simple business-specific chatbot logic (no Ollama, no API key)
-def ask_ollama(prompt):
-    """Simple local chatbot logic for free hosting."""
-    prompt = prompt.lower()
-
-    if "home" in prompt or "mortgage" in prompt:
-        return "We help clients find the best home loan and mortgage options across Brisbane and nearby suburbs."
-    elif "car" in prompt:
-        return "We offer tailored car and vehicle finance for personal and business needs."
-    elif "refinance" in prompt:
-        return "We assist clients with refinancing their existing loans to access better rates or release equity."
-    elif "investment" in prompt:
-        return "We specialise in investment property loans for new and experienced investors."
-    elif "commercial" in prompt:
-        return "We provide expert finance solutions for commercial properties and vehicles across Queensland."
-    elif "hello" in prompt or "hi" in prompt:
-        return "Hello! I'm your Brisbane mortgage and finance assistant. How can I help you today?"
-    else:
-        return (
-            "We are your local mortgage and finance specialists in Brisbane, Queensland. "
-            "We offer home loans, car loans, refinancing, investment property finance, "
-            "and commercial property and vehicle loans. How can I assist you today?"
-        )
-
-
-# ✅ Run app
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
